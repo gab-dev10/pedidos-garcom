@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Pedidos — Garçom</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-logo">
+      <div class="logo-icon">🍺</div>
+      <div>
+        <div class="header-title">Pedidos</div>
+        <div class="header-sub">Sistema do Garçom</div>
+      </div>
+    </div>
+    <button class="btn-config" onclick="openModal()">⚙ Cardápio</button>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" id="tab-pedido" onclick="switchTab('pedido')">Novo Pedido</div>
+    <div class="tab" id="tab-resumo" onclick="switchTab('resumo')">
+      Resumo <span id="tab-badge" style="display:none;" class="badge-count">0</span>
+    </div>
+  </div>
+
+  <!-- PAGE: NOVO PEDIDO -->
+  <div class="page active" id="page-pedido">
+
+    <div class="field">
+      <label>Nº da Comanda</label>
+      <input type="number" id="comanda" inputmode="numeric" placeholder="Ex: 12" min="1" class="input-comanda">
+    </div>
+
+    <div class="field">
+      <label>Item</label>
+      <div class="search-select" id="search-select-wrap">
+        <div class="search-input-wrap">
+          <input
+            type="text"
+            id="item-search"
+            placeholder="Buscar ou selecionar item…"
+            autocomplete="off"
+            oninput="filtrarItens()"
+            onfocus="abrirDropdown()"
+            onkeydown="navDropdown(event)"
+          >
+          <span class="search-arrow" id="search-arrow">▾</span>
+        </div>
+        <div class="search-dropdown" id="search-dropdown"></div>
+      </div>
+      <!-- campo oculto que guarda o id/dados do item selecionado -->
+      <input type="hidden" id="item-select-id">
+      <input type="hidden" id="item-select-cat">
+      <input type="hidden" id="item-select-subcat">
+      <input type="hidden" id="item-select-nome">
+    </div>
+
+    <!-- CAMPO: Quantidade de copos (apenas bebidas não-suco) -->
+    <div class="field cond-field" id="field-qtd-copos">
+      <label>Quantidade de Copos</label>
+      <div class="qtd-copos-row">
+        <button class="btn-qtd" onclick="alterarQtdCopos(-1)">−</button>
+        <span id="qtd-copos-valor" class="qtd-valor">1</span>
+        <button class="btn-qtd" onclick="alterarQtdCopos(1)">+</button>
+      </div>
+    </div>
+
+    <!-- ÁREA: Configuração individual de cada copo -->
+    <div class="cond-field" id="field-copos-lista">
+      <div id="copos-lista"></div>
+    </div>
+
+    <!-- CAMPO: Gelo (petisco não tem, suco não tem copos múltiplos) -->
+    <!-- Para sucos: gelo único direto -->
+    <div class="field cond-field" id="field-gelo-suco">
+      <label>Gelo</label>
+      <div class="toggle-group">
+        <button class="toggle-btn" id="gelo-suco-sim" onclick="selectToggleSuco('gelo', 'sim')">Com Gelo</button>
+        <button class="toggle-btn" id="gelo-suco-nao" onclick="selectToggleSuco('gelo', 'nao')">Sem Gelo</button>
+      </div>
+    </div>
+
+    <!-- Açúcar para suco -->
+    <div class="field cond-field" id="field-acucar-suco">
+      <label>Açúcar</label>
+      <div class="toggle-group">
+        <button class="toggle-btn" id="acucar-suco-sim" onclick="selectToggleSuco('acucar', 'sim')">Com Açúcar</button>
+        <button class="toggle-btn" id="acucar-suco-nao" onclick="selectToggleSuco('acucar', 'nao')">Sem Açúcar</button>
+      </div>
+    </div>
+
+    <button class="btn-add" onclick="adicionarItem()">＋ Adicionar Item</button>
+
+  </div>
+
+  <!-- PAGE: RESUMO -->
+  <div class="page" id="page-resumo">
+
+    <div id="resumo-comanda-info" style="display:none;" class="comanda-badge">
+      Comanda <span id="resumo-comanda-num">—</span>
+    </div>
+
+    <div class="resumo-header">
+      <div class="resumo-title">Itens do pedido</div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge-count" id="total-badge">0</span>
+        <button class="btn-clear-all" id="btn-clear" onclick="limparTudo()">Limpar tudo</button>
+      </div>
+    </div>
+
+    <div id="lista-itens"></div>
+
+    <button class="btn-finalizar" id="btn-finalizar" onclick="finalizarPedido()" disabled>
+      Enviar pelo WhatsApp
+    </button>
+
+  </div>
+
+  <!-- MODAL: CARDÁPIO -->
+  <div class="modal-overlay" id="modal-overlay" onclick="closeModalOutside(event)">
+    <div class="modal" id="modal">
+      <div class="modal-handle"></div>
+      <div class="modal-title">⚙ Gerenciar Cardápio</div>
+
+      <div class="config-block">
+        <div class="field" style="margin-bottom:0">
+          <label>Número WhatsApp do Bar/Caixa</label>
+          <input type="text" id="whatsapp-num" placeholder="5521999999999" inputmode="numeric"
+            oninput="salvarWpp()" style="margin-top:6px;">
+        </div>
+      </div>
+
+      <div class="divider-label">Adicionar item ao cardápio</div>
+
+      <div class="add-item-form">
+        <div class="row-2">
+          <div class="field">
+            <label>Categoria</label>
+            <select id="novo-cat" onchange="onNovoCatChange()" class="select-sm">
+              <option value="bebida">Bebida</option>
+              <option value="petisco">Petisco</option>
+            </select>
+          </div>
+          <div class="field" id="subcat-field">
+            <label>Subcategoria</label>
+            <select id="novo-subcat" class="select-sm">
+              <option value="refrigerante">Refrigerante</option>
+              <option value="suco">Suco</option>
+              <option value="cerveja">Cerveja</option>
+              <option value="agua">Água</option>
+              <option value="outro">Outro</option>
+            </select>
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:12px">
+          <label>Nome do item</label>
+          <input type="text" id="novo-nome" placeholder="Ex: Coca-Cola Zero" class="input-sm">
+        </div>
+        <button class="btn-add-small" onclick="adicionarCardapio()">+ Adicionar ao Cardápio</button>
+      </div>
+
+      <div id="modal-cardapio-lista"></div>
+
+      <button class="btn-modal-close" onclick="closeModal()">Fechar</button>
+    </div>
+  </div>
+
+  <!-- NOTIFICAÇÃO -->
+  <div class="notif" id="notif"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
