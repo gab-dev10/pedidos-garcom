@@ -61,10 +61,7 @@ let cardapio = JSON.parse(localStorage.getItem('cardapio') || 'null') || [
   { id: 51, nome: 'Cerveja Original 600ml',          cat: 'bebida',  subcat: 'cerveja' },
   { id: 52, nome: 'Cerveja Heineken 600ml',          cat: 'bebida',  subcat: 'cerveja' },
   // Petiscos
-  { id: 53, nome: 'Batata Frita Crocante',      cat: 'petisco', subcat: null },
-  { id: 54, nome: 'Frango à Passarinho',        cat: 'petisco', subcat: null },
-  { id: 55, nome: 'Calabresa Acebolada',        cat: 'petisco', subcat: null },
-  { id: 56, nome: 'Isca de Peixe',              cat: 'petisco', subcat: null },
+  { id: 53, nome: 'Pavê',              cat: 'petisco', subcat: null }
 ];
 
 let wppNum     = localStorage.getItem('wpp_num') || '';
@@ -379,12 +376,14 @@ function adicionarItem() {
   const tipo    = getTipoItem(item);
   const sub     = item ? (item.subcat || '') : '';
 
+  const obs     = document.getElementById('obs').value.trim();
+
   if (!comanda) { mostrarNotif('⚠ Preencha o número da comanda'); return; }
   if (!tipo)    { mostrarNotif('⚠ Selecione um item');            return; }
 
   // PETISCO
   if (tipo === 'petisco') {
-    pushItem({ comanda, nome: item.nome, tipo: 'petisco' });
+    pushItem({ comanda, nome: item.nome, tipo: 'petisco', obs });
     resetAposAdicionar(); return;
   }
 
@@ -392,7 +391,7 @@ function adicionarItem() {
   if (tipo === 'suco-copo') {
     if (sucoToggle.gelo   === null) { mostrarNotif('⚠ Escolha: Com Gelo ou Sem Gelo');     return; }
     if (sucoToggle.acucar === null) { mostrarNotif('⚠ Escolha: Com Açúcar ou Sem Açúcar'); return; }
-    pushItem({ comanda, nome: item.nome, tipo: 'suco-copo',
+    pushItem({ comanda, nome: item.nome, tipo: 'suco-copo', obs,
       gelo: sucoToggle.gelo, acucar: sucoToggle.acucar });
     resetAposAdicionar(); return;
   }
@@ -401,7 +400,7 @@ function adicionarItem() {
   if (tipo === 'suco-jarra') {
     if (sucoToggle.gelo   === null) { mostrarNotif('⚠ Escolha: Com Gelo ou Sem Gelo');     return; }
     if (sucoToggle.acucar === null) { mostrarNotif('⚠ Escolha: Com Açúcar ou Sem Açúcar'); return; }
-    pushItem({ comanda, nome: item.nome, tipo: 'suco-jarra',
+    pushItem({ comanda, nome: item.nome, tipo: 'suco-jarra', obs,
       gelo: sucoToggle.gelo, acucar: sucoToggle.acucar, qtdCopos });
     resetAposAdicionar(); return;
   }
@@ -415,7 +414,7 @@ function adicionarItem() {
       mostrarNotif(`⚠ Copo ${i + 1}: escolha Limão ou Sem Limão`); return;
     }
   }
-  pushItem({ comanda, nome: item.nome, tipo: 'bebida', sub,
+  pushItem({ comanda, nome: item.nome, tipo: 'bebida', sub, obs,
     copos: coposState.map(c => ({ ...c })) });
   resetAposAdicionar();
 }
@@ -433,6 +432,7 @@ function pushItem(item) {
 function resetAposAdicionar() {
   itemSelecionado = null;
   document.getElementById('item-search').value = '';
+  document.getElementById('obs').value         = '';
   coposState = [];
   qtdCopos   = 1;
   sucoToggle = { gelo: null, acucar: null };
@@ -511,6 +511,7 @@ function renderResumo() {
         <div class="item-info">
           <div class="item-name">${item.nome}</div>
           ${detalhes}
+          ${item.obs ? `<div class="item-obs">📝 ${item.obs}</div>` : ''}
         </div>
         <button class="btn-remove" onclick="removerItem(${item.id})">×</button>
       </div>`;
@@ -573,6 +574,8 @@ function finalizarPedido() {
     else if (item.tipo === 'petisco') {
       msg += `   ───────────────────────\n`;
     }
+
+    if (item.obs) msg += `   📝 Obs: ${item.obs}\n`;
 
     msg += '\n';
   });

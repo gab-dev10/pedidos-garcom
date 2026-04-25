@@ -516,6 +516,13 @@ select optgroup { color: var(--accent); font-size: 12px; }
 
 .btn-remove:hover { color: var(--red); }
 
+.item-obs {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 6px;
+  font-style: italic;
+}
+
 /* ============================================================
    BOTÃO FINALIZAR
    ============================================================ */
@@ -702,6 +709,41 @@ select optgroup { color: var(--accent); font-size: 12px; }
   padding: 14px;
   cursor: pointer;
   margin-top: 10px;
+}
+
+/* ============================================================
+   OBSERVAÇÕES
+   ============================================================ */
+textarea {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  padding: 13px 16px;
+  outline: none;
+  resize: none;
+  line-height: 1.5;
+  transition: border-color 0.2s;
+}
+
+textarea:focus {
+  border-color: var(--accent);
+}
+
+textarea::placeholder {
+  color: var(--muted);
+}
+
+.label-opcional {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+  margin-left: 4px;
 }
 
 /* ============================================================
