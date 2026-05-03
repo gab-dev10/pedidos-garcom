@@ -60,8 +60,12 @@ let cardapio = JSON.parse(localStorage.getItem('cardapio') || 'null') || [
   { id: 50, nome: 'Cerveja Spaten 600ml',          cat: 'bebida',  subcat: 'cerveja' },
   { id: 51, nome: 'Cerveja Original 600ml',          cat: 'bebida',  subcat: 'cerveja' },
   { id: 52, nome: 'Cerveja Heineken 600ml',          cat: 'bebida',  subcat: 'cerveja' },
+  { id: 53, nome: 'Cerveja Stela 600ml',          cat: 'bebida',  subcat: 'cerveja' },
   // Petiscos
-  { id: 53, nome: 'Pavê',              cat: 'petisco', subcat: null }
+  { id: 54, nome: 'Pavê',              cat: 'petisco', subcat: null },
+  { id: 55, nome: 'Picolé N.Silva',              cat: 'petisco', subcat: null },
+  { id: 56, nome: 'Picolé',              cat: 'petisco', subcat: null },
+  { id: 57, nome: 'Bombom',              cat: 'petisco', subcat: null }
 ];
 
 let wppNum     = localStorage.getItem('wpp_num') || '';
@@ -84,10 +88,6 @@ function init() {
   renderResumo();
   renderModalCardapio();
   atualizarBadge();
-  if (itens.length > 0) {
-    document.getElementById('resumo-comanda-num').textContent    = itens[0].comanda;
-    document.getElementById('resumo-comanda-info').style.display = 'inline-flex';
-  }
 }
 
 // ============================================================
@@ -425,8 +425,6 @@ function pushItem(item) {
   salvarItens();
   atualizarBadge();
   mostrarNotif('✓ ' + item.nome + ' adicionado');
-  document.getElementById('resumo-comanda-num').textContent    = item.comanda;
-  document.getElementById('resumo-comanda-info').style.display = 'inline-flex';
 }
 
 function resetAposAdicionar() {
@@ -440,21 +438,14 @@ function resetAposAdicionar() {
 }
 
 // ============================================================
-// RENDERIZAR RESUMO
+// RENDERIZAR RESUMO — agrupado por comanda
 // ============================================================
 function renderResumo() {
   const lista    = document.getElementById('lista-itens');
-  const btn      = document.getElementById('btn-finalizar');
   const badge    = document.getElementById('total-badge');
   const clearBtn = document.getElementById('btn-clear');
 
   badge.textContent = itens.length;
-  btn.disabled      = itens.length === 0;
-
-  if (itens.length > 0) {
-    document.getElementById('resumo-comanda-num').textContent    = itens[0].comanda;
-    document.getElementById('resumo-comanda-info').style.display = 'inline-flex';
-  }
 
   if (itens.length === 0) {
     lista.innerHTML = `
@@ -468,54 +459,76 @@ function renderResumo() {
 
   clearBtn.style.display = 'inline-block';
 
-  lista.innerHTML = itens.map((item, idx) => {
-    let detalhes = '';
+  // Agrupa itens por comanda mantendo ordem de chegada
+  const comandasMap = new Map();
+  itens.forEach(item => {
+    if (!comandasMap.has(item.comanda)) comandasMap.set(item.comanda, []);
+    comandasMap.get(item.comanda).push(item);
+  });
 
-    if (item.tipo === 'petisco') {
-      detalhes = '<span class="pill pill-neutral">🍽️ Petisco</span>';
-    }
-
-    else if (item.tipo === 'suco-copo') {
-      detalhes = `
-        <div class="item-copos-lista">
-          <div class="item-copo-row">
-            <span class="pill ${item.gelo   === 'sim' ? 'pill-yes' : 'pill-no'}">${item.gelo   === 'sim' ? '✓ Gelo'   : '✗ Gelo'}</span>
-            <span class="pill ${item.acucar === 'sim' ? 'pill-yes' : 'pill-no'}">${item.acucar === 'sim' ? '✓ Açúcar' : '✗ Açúcar'}</span>
+  let html = '';
+  comandasMap.forEach((itensDaComanda, numComanda) => {
+    html += `
+      <div class="comanda-bloco">
+        <div class="comanda-bloco-header">
+          <div class="comanda-bloco-titulo">
+            <span class="comanda-bloco-num">Comanda ${numComanda}</span>
+            <span class="comanda-bloco-qtd">${itensDaComanda.length} item${itensDaComanda.length > 1 ? 's' : ''}</span>
           </div>
-        </div>`;
-    }
-
-    else if (item.tipo === 'suco-jarra') {
-      detalhes = `
-        <div class="item-copos-lista">
-          <div class="item-copo-row">
-            <span class="pill pill-neutral">🥤 ${item.qtdCopos} copo${item.qtdCopos > 1 ? 's' : ''}</span>
-            <span class="pill ${item.gelo   === 'sim' ? 'pill-yes' : 'pill-no'}">${item.gelo   === 'sim' ? '✓ Gelo'   : '✗ Gelo'}</span>
-            <span class="pill ${item.acucar === 'sim' ? 'pill-yes' : 'pill-no'}">${item.acucar === 'sim' ? '✓ Açúcar' : '✗ Açúcar'}</span>
-          </div>
-        </div>`;
-    }
-
-    else if (item.tipo === 'bebida') {
-      const linhas = item.copos.map((copo, ci) => {
-        let pills = `<span class="pill ${copo.gelo === 'sim' ? 'pill-yes' : 'pill-no'}">${copo.gelo === 'sim' ? '✓ Gelo' : '✗ Gelo'}</span>`;
-        if (copo.limao != null) pills += ` <span class="pill ${copo.limao === 'sim' ? 'pill-yes' : 'pill-no'}">${copo.limao === 'sim' ? '✓ Limão' : '✗ Limão'}</span>`;
-        return `<div class="item-copo-row"><span class="item-copo-label">Copo ${ci + 1}</span>${pills}</div>`;
-      }).join('');
-      detalhes = `<div class="item-copos-lista">${linhas}</div>`;
-    }
-
-    return `
-      <div class="item-card">
-        <div class="item-num">${idx + 1}</div>
-        <div class="item-info">
-          <div class="item-name">${item.nome}</div>
-          ${detalhes}
-          ${item.obs ? `<div class="item-obs">📝 ${item.obs}</div>` : ''}
+          <button class="btn-enviar-comanda" onclick="enviarComanda('${numComanda}')">Enviar ✉</button>
         </div>
-        <button class="btn-remove" onclick="removerItem(${item.id})">×</button>
+        ${itensDaComanda.map((item, idx) => itemCardHTML(item, idx)).join('')}
+        <button class="btn-limpar-comanda" onclick="limparComanda('${numComanda}')">Limpar comanda ${numComanda}</button>
       </div>`;
-  }).join('');
+  });
+
+  lista.innerHTML = html;
+}
+
+function itemCardHTML(item, idx) {
+  let detalhes = '';
+
+  if (item.tipo === 'petisco') {
+    detalhes = '<span class="pill pill-neutral">🍽️ Petisco</span>';
+  }
+  else if (item.tipo === 'suco-copo') {
+    detalhes = `
+      <div class="item-copos-lista">
+        <div class="item-copo-row">
+          <span class="pill ${item.gelo   === 'sim' ? 'pill-yes' : 'pill-no'}">${item.gelo   === 'sim' ? '✓ Gelo'   : '✗ Gelo'}</span>
+          <span class="pill ${item.acucar === 'sim' ? 'pill-yes' : 'pill-no'}">${item.acucar === 'sim' ? '✓ Açúcar' : '✗ Açúcar'}</span>
+        </div>
+      </div>`;
+  }
+  else if (item.tipo === 'suco-jarra') {
+    detalhes = `
+      <div class="item-copos-lista">
+        <div class="item-copo-row">
+          <span class="pill pill-neutral">🥤 ${item.qtdCopos} copo${item.qtdCopos > 1 ? 's' : ''}</span>
+          <span class="pill ${item.gelo   === 'sim' ? 'pill-yes' : 'pill-no'}">${item.gelo   === 'sim' ? '✓ Gelo'   : '✗ Gelo'}</span>
+          <span class="pill ${item.acucar === 'sim' ? 'pill-yes' : 'pill-no'}">${item.acucar === 'sim' ? '✓ Açúcar' : '✗ Açúcar'}</span>
+        </div>
+      </div>`;
+  }
+  else if (item.tipo === 'bebida') {
+    const linhas = item.copos.map((copo, ci) => {
+      let pills = `<span class="pill ${copo.gelo === 'sim' ? 'pill-yes' : 'pill-no'}">${copo.gelo === 'sim' ? '✓ Gelo' : '✗ Gelo'}</span>`;
+      if (copo.limao != null) pills += ` <span class="pill ${copo.limao === 'sim' ? 'pill-yes' : 'pill-no'}">${copo.limao === 'sim' ? '✓ Limão' : '✗ Limão'}</span>`;
+      return `<div class="item-copo-row"><span class="item-copo-label">Copo ${ci + 1}</span>${pills}</div>`;
+    }).join('');
+    detalhes = `<div class="item-copos-lista">${linhas}</div>`;
+  }
+
+  return `
+    <div class="item-card">
+      <div class="item-num">${idx + 1}</div>
+      <div class="item-info">
+        <div class="item-name">${item.nome}</div>
+        ${detalhes}
+        ${item.obs ? `<div class="item-obs">📝 ${item.obs}</div>` : ''}
+      </div>
+      <button class="btn-remove" onclick="removerItem(${item.id})">×</button>
+    </div>`;
 }
 
 function removerItem(id) {
@@ -523,11 +536,16 @@ function removerItem(id) {
   salvarItens(); atualizarBadge(); renderResumo();
 }
 
+function limparComanda(numComanda) {
+  if (!confirm(`Limpar todos os itens da comanda ${numComanda}?`)) return;
+  itens = itens.filter(i => i.comanda !== numComanda);
+  salvarItens(); atualizarBadge(); renderResumo();
+}
+
 function limparTudo() {
-  if (!confirm('Limpar todos os itens do pedido?')) return;
+  if (!confirm('Limpar todos os pedidos em aberto?')) return;
   itens = [];
   salvarItens(); atualizarBadge(); renderResumo();
-  document.getElementById('resumo-comanda-info').style.display = 'none';
 }
 
 function atualizarBadge() {
@@ -537,18 +555,19 @@ function atualizarBadge() {
 }
 
 // ============================================================
-// FINALIZAR — monta mensagem e abre WhatsApp
+// ENVIAR COMANDA ESPECÍFICA PELO WHATSAPP
 // ============================================================
-function finalizarPedido() {
-  if (itens.length === 0) return;
+function enviarComanda(numComanda) {
   const num = wppNum.replace(/\D/g, '');
   if (!num) { mostrarNotif('⚠ Configure o número do WhatsApp no Cardápio'); return; }
 
-  const comanda = itens[0].comanda;
-  const emojis  = ['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟'];
-  let msg = `🧾 *PEDIDO - COMANDA Nº ${comanda}*\n\n`;
+  const itensDaComanda = itens.filter(i => i.comanda === numComanda);
+  if (!itensDaComanda.length) return;
 
-  itens.forEach((item, idx) => {
+  const emojis = ['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟'];
+  let msg = `🧾 *PEDIDO - COMANDA Nº ${numComanda}*\n\n`;
+
+  itensDaComanda.forEach((item, idx) => {
     const ne = idx < 10 ? emojis[idx] : `${idx + 1}.`;
     msg += `${ne} ${item.nome}\n`;
 
@@ -556,13 +575,11 @@ function finalizarPedido() {
       msg += `   • Gelo: ${item.gelo === 'sim' ? 'Sim' : 'Não'}\n`;
       msg += `   • Açúcar: ${item.acucar === 'sim' ? 'Sim' : 'Não'}\n`;
     }
-
     else if (item.tipo === 'suco-jarra') {
       msg += `   • Copos: ${item.qtdCopos}\n`;
       msg += `   • Gelo: ${item.gelo === 'sim' ? 'Sim' : 'Não'}\n`;
       msg += `   • Açúcar: ${item.acucar === 'sim' ? 'Sim' : 'Não'}\n`;
     }
-
     else if (item.tipo === 'bebida') {
       item.copos.forEach((copo, ci) => {
         msg += `   • Copo ${ci + 1}: Gelo ${copo.gelo === 'sim' ? 'Sim' : 'Não'}`;
@@ -570,17 +587,15 @@ function finalizarPedido() {
         msg += '\n';
       });
     }
-
     else if (item.tipo === 'petisco') {
       msg += `   ───────────────────────\n`;
     }
 
     if (item.obs) msg += `   📝 Obs: ${item.obs}\n`;
-
     msg += '\n';
   });
 
-  msg += `─────────────────────\nTotal de itens: ${itens.length}`;
+  msg += `─────────────────────\nTotal de itens: ${itensDaComanda.length}`;
   window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
 }
 

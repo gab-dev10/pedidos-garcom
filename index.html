@@ -108,12 +108,8 @@
   <!-- PAGE: RESUMO -->
   <div class="page" id="page-resumo">
 
-    <div id="resumo-comanda-info" style="display:none;" class="comanda-badge">
-      Comanda <span id="resumo-comanda-num">—</span>
-    </div>
-
     <div class="resumo-header">
-      <div class="resumo-title">Itens do pedido</div>
+      <div class="resumo-title">Pedidos em aberto</div>
       <div style="display:flex; align-items:center; gap:10px;">
         <span class="badge-count" id="total-badge">0</span>
         <button class="btn-clear-all" id="btn-clear" onclick="limparTudo()">Limpar tudo</button>
@@ -121,10 +117,6 @@
     </div>
 
     <div id="lista-itens"></div>
-
-    <button class="btn-finalizar" id="btn-finalizar" onclick="finalizarPedido()" disabled>
-      Enviar pelo WhatsApp
-    </button>
 
   </div>
 
