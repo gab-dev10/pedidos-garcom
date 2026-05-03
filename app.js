@@ -557,6 +557,58 @@ function atualizarBadge() {
 // ============================================================
 // ENVIAR COMANDA ESPECÍFICA PELO WHATSAPP
 // ============================================================
+// ============================================================
+// ENVIAR TODAS AS COMANDAS DE UMA VEZ
+// ============================================================
+function enviarTudo() {
+  if (itens.length === 0) { mostrarNotif('⚠ Nenhum item no resumo'); return; }
+  const num = wppNum.replace(/\D/g, '');
+  if (!num) { mostrarNotif('⚠ Configure o número do WhatsApp no Cardápio'); return; }
+
+  const comandasMap = new Map();
+  itens.forEach(item => {
+    if (!comandasMap.has(item.comanda)) comandasMap.set(item.comanda, []);
+    comandasMap.get(item.comanda).push(item);
+  });
+
+  const emojis = ['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟'];
+  let msg = '';
+
+  comandasMap.forEach((itensDaComanda, numComanda) => {
+    msg += `🧾 *COMANDA Nº ${numComanda}*\n\n`;
+    itensDaComanda.forEach((item, idx) => {
+      const ne = idx < 10 ? emojis[idx] : `${idx + 1}.`;
+      msg += `${ne} ${item.nome}\n`;
+      if (item.tipo === 'suco-copo') {
+        msg += `   • Gelo: ${item.gelo === 'sim' ? 'Sim' : 'Não'}\n`;
+        msg += `   • Açúcar: ${item.acucar === 'sim' ? 'Sim' : 'Não'}\n`;
+      }
+      else if (item.tipo === 'suco-jarra') {
+        msg += `   • Copos: ${item.qtdCopos}\n`;
+        msg += `   • Gelo: ${item.gelo === 'sim' ? 'Sim' : 'Não'}\n`;
+        msg += `   • Açúcar: ${item.acucar === 'sim' ? 'Sim' : 'Não'}\n`;
+      }
+      else if (item.tipo === 'bebida') {
+        item.copos.forEach((copo, ci) => {
+          msg += `   • Copo ${ci + 1}: Gelo ${copo.gelo === 'sim' ? 'Sim' : 'Não'}`;
+          if (copo.limao != null) msg += ` | Limão ${copo.limao === 'sim' ? 'Sim' : 'Não'}`;
+          msg += '\n';
+        });
+      }
+      else if (item.tipo === 'petisco') {
+        msg += `   ───────────────────────\n`;
+      }
+      if (item.obs) msg += `   📝 Obs: ${item.obs}\n`;
+      msg += '\n';
+    });
+    msg += `Total desta comanda: ${itensDaComanda.length} item${itensDaComanda.length > 1 ? 's' : ''}\n`;
+    msg += `━━━━━━━━━━━━━━━━━━━━━\n\n`;
+  });
+
+  msg += `📋 *Total geral: ${itens.length} item${itens.length > 1 ? 's' : ''} em ${comandasMap.size} comanda${comandasMap.size > 1 ? 's' : ''}*`;
+  window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
 function enviarComanda(numComanda) {
   const num = wppNum.replace(/\D/g, '');
   if (!num) { mostrarNotif('⚠ Configure o número do WhatsApp no Cardápio'); return; }
